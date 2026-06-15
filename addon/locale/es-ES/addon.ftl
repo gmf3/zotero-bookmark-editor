@@ -44,6 +44,17 @@ level-editor-import-confirm = Esto reemplaza TODO el indice actual. Continuar?
 level-editor-import-success = Indice importado: { $count } marcadores
 outline-edit-placeholder = Titulo del marcador
 outline-new-node-title = Nuevo marcador
+# v0.6.0 — Context menu items (sidebar)
+context-new-sibling = Nuevo hermano (mismo nivel)
+context-new-child = Nuevo hijo (anidado)
+context-new-bookmark = Nuevo marcador en esta pagina
+context-rename = Renombrar (F2)
+context-delete = Borrar
+# v0.7.0 — Copiar para Quick Citation (Obsidian)
+qc-copy = Copiar para Quick Citation (Obsidian)
+qc-copy-ok = Copiado para Quick Citation
+qc-copy-failed = No se pudo copiar al portapapeles
+qc-copy-no-selection = Seleccioná un marcador primero
 outline-delete-confirm =
     Este nodo tiene hijos. Borrarlo igual?
     { " " }

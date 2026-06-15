@@ -44,6 +44,17 @@ level-editor-import-confirm = This will replace the ENTIRE outline. Continue?
 level-editor-import-success = Outline imported: { $count } bookmarks
 outline-edit-placeholder = Bookmark title
 outline-new-node-title = New bookmark
+# v0.6.0 — Context menu items (sidebar)
+context-new-sibling = New sibling (same level)
+context-new-child = New child (nested)
+context-new-bookmark = New bookmark on this page
+context-rename = Rename (F2)
+context-delete = Delete
+# v0.7.0 — Copy for Quick Citation (Obsidian)
+qc-copy = Copy for Quick Citation (Obsidian)
+qc-copy-ok = Copied for Quick Citation
+qc-copy-failed = Could not copy to clipboard
+qc-copy-no-selection = Select a bookmark first
 outline-delete-confirm =
     This node has child nodes. Delete anyway?
     { " " }

@@ -467,4 +467,34 @@ button:hover.j-bookmark-toolbar-button {
   gap: 8px;
   background-color: var(--background-color);
 }
+
+/* v0.6.0 — Context menu para sidebars (outline + bookmarks) */
+.be-context-menu {
+  position: fixed;
+  background: var(--container-bg, #fff);
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px var(--shadow-color, rgba(0, 0, 0, 0.15));
+  padding: 4px 0;
+  min-width: 200px;
+  font-size: 13px;
+  user-select: none;
+  color: var(--text-color, #222);
+}
+.be-context-menu-item {
+  padding: 7px 14px;
+  cursor: pointer;
+}
+.be-context-menu-item:hover:not(.disabled) {
+  background: var(--node-hover-bg, #f0f0f0);
+}
+.be-context-menu-item.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.be-context-menu-sep {
+  height: 1px;
+  background: var(--border-color, #ddd);
+  margin: 4px 0;
+}
 `;

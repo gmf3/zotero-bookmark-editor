@@ -6,6 +6,11 @@ export type FluentMessageId =
   | 'bookmark'
   | 'bookmark-add'
   | 'bookmark-delete'
+  | 'context-delete'
+  | 'context-new-bookmark'
+  | 'context-new-child'
+  | 'context-new-sibling'
+  | 'context-rename'
   | 'label-disableZoteroOutline'
   | 'label-enableBookmark'
   | 'label-newNodeAsChild'
@@ -55,4 +60,8 @@ export type FluentMessageId =
   | 'plugin-name'
   | 'pref-group-about'
   | 'pref-group-bookmark'
-  | 'pref-help';
+  | 'pref-help'
+  | 'qc-copy'
+  | 'qc-copy-failed'
+  | 'qc-copy-no-selection'
+  | 'qc-copy-ok';

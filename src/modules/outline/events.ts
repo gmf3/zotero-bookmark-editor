@@ -19,7 +19,8 @@ import {
 } from "./bookmark";
 import { ICONS } from "./style";
 import { getString } from "../../utils/locale";
-import { getPref } from "../../utils/prefs";
+import { getPref, setPref } from "../../utils/prefs";
+import { copyNodeForQuickCitation } from "./quickCitation";
 
 const MAX_LEVEL = 7;
 
@@ -195,6 +196,54 @@ export function initEventListener(
   // 处理键盘事件
   treeContainer.addEventListener("keydown", handleKeydownEvent);
 
+  // Right-click → context menu (outline sidebar) - v0.6.0
+  treeContainer.addEventListener("contextmenu", (e: MouseEvent) => {
+    e.preventDefault();
+    const targetRow = (e.target as Element).closest(".tree-node");
+    if (targetRow) selectNode(targetRow);
+    const hasSelection = !!doc.querySelector(".node-selected");
+    showContextMenu(doc, e.clientX, e.clientY, [
+      {
+        label: getString("context-new-sibling"),
+        onClick: () => addNewNode({ target: treeContainer } as unknown as Event),
+      },
+      {
+        label: getString("context-new-child"),
+        disabled: !hasSelection,
+        separatorAfter: true,
+        onClick: async () => {
+          const prev = getPref("newNodeAsChild");
+          setPref("newNodeAsChild", true);
+          try {
+            await addNewNode({ target: treeContainer } as unknown as Event);
+          } finally {
+            setPref("newNodeAsChild", prev as boolean);
+          }
+        },
+      },
+      {
+        label: getString("context-rename"),
+        disabled: !hasSelection,
+        onClick: () => {
+          const title = doc.querySelector(".node-selected span.node-title");
+          if (title) makeNodeEditable(title);
+        },
+      },
+      {
+        label: getString("context-delete"),
+        disabled: !hasSelection,
+        separatorAfter: true,
+        onClick: () =>
+          deleteSelectedNode({ target: treeContainer } as unknown as Event),
+      },
+      {
+        label: getString("qc-copy"),
+        disabled: !hasSelection,
+        onClick: () => copyNodeForQuickCitation(doc, "outline"),
+      },
+    ]);
+  });
+
   // 点击书签跳转到具体页码
 
   // 书签相关事件处理
@@ -226,6 +275,48 @@ export function initEventListener(
     bookmarkContainer.addEventListener("dragleave", handleBookmarkDragLeave);
     bookmarkContainer.addEventListener("drop", handleBookmarkDrop);
     bookmarkContainer.addEventListener("dragend", handleBookmarkDragEnd);
+
+    // Right-click → context menu (bookmark sidebar) - v0.6.0
+    bookmarkContainer.addEventListener("contextmenu", (e: MouseEvent) => {
+      e.preventDefault();
+      const targetRow = (e.target as Element).closest(".bookmark-node");
+      if (targetRow) selectBookmarkNode(targetRow);
+      const hasSelection = !!doc.querySelector(".bookmark-selected");
+      showContextMenu(doc, e.clientX, e.clientY, [
+        {
+          label: getString("context-new-bookmark"),
+          separatorAfter: true,
+          onClick: () =>
+            addNewBookmarkNode({
+              target: bookmarkContainer,
+            } as unknown as Event),
+        },
+        {
+          label: getString("context-rename"),
+          disabled: !hasSelection,
+          onClick: () => {
+            const title = doc.querySelector(
+              ".bookmark-selected span.bookmark-title",
+            );
+            if (title) makeBookmarkNodeEditable(title);
+          },
+        },
+        {
+          label: getString("context-delete"),
+          disabled: !hasSelection,
+          separatorAfter: true,
+          onClick: () =>
+            deleteSelectedBookmarkNode({
+              target: bookmarkContainer,
+            } as unknown as Event),
+        },
+        {
+          label: getString("qc-copy"),
+          disabled: !hasSelection,
+          onClick: () => copyNodeForQuickCitation(doc, "bookmark"),
+        },
+      ]);
+    });
   }
 
   // 书签工具栏事件
@@ -886,6 +977,9 @@ export async function addNewNode(ev: Event) {
   const selectedNode = doc.querySelector(".node-selected");
   const location = getReaderPagePosition();
 
+  // v0.6.0: <ul> donde createTreeNodes appendea el nodo nuevo (su lastElementChild).
+  let targetList: HTMLElement;
+
   // 如果没有选中节点，添加到根
   if (!selectedNode) {
     const rootList = doc.getElementById("root-list")!;
@@ -903,6 +997,7 @@ export async function addNewNode(ev: Event) {
       doc,
     );
     doc.querySelector(".empty-outline-prompt")?.classList.add("hidden");
+    targetList = rootList;
   } else {
     // 添加为选中节点的子节点或兄弟节点
     let targetChildrenList: HTMLElement;
@@ -946,9 +1041,23 @@ export async function addNewNode(ev: Event) {
       targetChildrenList,
       doc,
     );
+    targetList = targetChildrenList;
   }
   // 保存节点信息
   await saveOutlineToJSON();
+
+  // v0.6.0 fix: el nodo recien creado es el ultimo <li> appendeado a targetList
+  // (createTreeNodes hace appendChild). Antes se tomaba el ultimo <li> de TODO
+  // el arbol, lo que editaba el nodo equivocado al crear un hijo en el medio.
+  const newLi = targetList.lastElementChild as HTMLElement | null;
+  if (newLi && newLi.matches("li.tree-item")) {
+    const treeNode = newLi.querySelector(".tree-node");
+    if (treeNode) selectNode(treeNode);
+    const titleSpan = newLi.querySelector<HTMLElement>("span.node-title");
+    if (titleSpan) {
+      setTimeout(() => makeNodeEditable(titleSpan), 0);
+    }
+  }
 }
 
 function clickToPosition(targetElement: Element) {
@@ -1203,6 +1312,17 @@ export async function addNewBookmarkNode(ev: Event) {
 
   // 保存书签信息
   await saveBookmarksToJSON();
+
+  // v0.6.0: auto-edit del titulo del bookmark recien creado
+  const lastLi = rootList.lastElementChild as HTMLLIElement | null;
+  if (lastLi) {
+    const bookmarkNode = lastLi.querySelector(".bookmark-node");
+    if (bookmarkNode) selectBookmarkNode(bookmarkNode);
+    const titleSpan = lastLi.querySelector<HTMLElement>("span.bookmark-title");
+    if (titleSpan) {
+      setTimeout(() => makeBookmarkNodeEditable(titleSpan), 0);
+    }
+  }
 }
 
 // 删除选中的书签
@@ -1531,4 +1651,91 @@ export async function openLevelEditorRunner(
 ): Promise<void> {
   const { openLevelEditor } = await import("./levelEditor");
   await openLevelEditor(reader);
+}
+
+// ========== v0.6.0: Context menu helper ==========
+
+interface ContextMenuItem {
+  label: string;
+  onClick: () => void | Promise<void>;
+  disabled?: boolean;
+  separatorAfter?: boolean;
+}
+
+function showContextMenu(
+  doc: Document,
+  x: number,
+  y: number,
+  items: ContextMenuItem[],
+): void {
+  // Remove existing menus
+  doc.querySelectorAll(".be-context-menu").forEach((el) => el.remove());
+
+  const menu = doc.createElement("div");
+  menu.className = "be-context-menu";
+  Object.assign(menu.style, {
+    position: "fixed",
+    left: `${x}px`,
+    top: `${y}px`,
+    zIndex: "999999",
+  });
+
+  for (const item of items) {
+    const row = doc.createElement("div");
+    row.className = "be-context-menu-item";
+    row.textContent = item.label;
+    if (item.disabled) {
+      row.classList.add("disabled");
+    } else {
+      row.addEventListener("click", async (ev: Event) => {
+        ev.stopPropagation();
+        try {
+          await item.onClick();
+        } catch (err) {
+          ztoolkit.log("context menu item error", err);
+        }
+        menu.remove();
+      });
+    }
+    menu.appendChild(row);
+    if (item.separatorAfter) {
+      const sep = doc.createElement("div");
+      sep.className = "be-context-menu-sep";
+      menu.appendChild(sep);
+    }
+  }
+
+  doc.body.appendChild(menu);
+
+  // Clamp position to viewport
+  const win = doc.defaultView!;
+  const rect = menu.getBoundingClientRect();
+  if (rect.right > win.innerWidth) {
+    menu.style.left = `${Math.max(4, win.innerWidth - rect.width - 4)}px`;
+  }
+  if (rect.bottom > win.innerHeight) {
+    menu.style.top = `${Math.max(4, win.innerHeight - rect.height - 4)}px`;
+  }
+
+  // Close handlers
+  const close = () => {
+    menu.remove();
+    doc.removeEventListener("click", outsideClick);
+    doc.removeEventListener("keydown", escKey);
+    doc.removeEventListener("contextmenu", outsideContextMenu, true);
+  };
+  const outsideClick = (e: MouseEvent) => {
+    if (!menu.contains(e.target as Node)) close();
+  };
+  const escKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape") close();
+  };
+  const outsideContextMenu = (e: MouseEvent) => {
+    if (!menu.contains(e.target as Node)) close();
+  };
+  setTimeout(() => {
+    doc.addEventListener("click", outsideClick);
+    doc.addEventListener("keydown", escKey);
+    doc.addEventListener("contextmenu", outsideContextMenu, true);
+  }, 0);
 }
