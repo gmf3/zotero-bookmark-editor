@@ -35,7 +35,7 @@ Mientras no apretás "Guardar en el PDF", los marcadores viven en un JSON dentro
 
 ## Instalación
 
-1. Descargá el `.xpi` desde [Releases](https://github.com/eFe-go/zotero-bookmark-editor/releases)
+1. Descargá el `.xpi` desde [Releases](https://github.com/gmf3/zotero-bookmark-editor/releases)
 2. En Zotero: **Tools → Plugins → ⚙️ → Install Plugin From File** → elegí el `.xpi`
 3. Reiniciá Zotero
 
