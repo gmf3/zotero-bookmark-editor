@@ -11,16 +11,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eFe-go/zotero-bookmark-editor.git"
+    "url": "git+https://github.com/gmf3/zotero-bookmark-editor.git"
   },
   "author": "eFe-go",
   "contributors": [
     "l0o0 (Jasminum original author)"
   ],
   "bugs": {
-    "url": "https://github.com/eFe-go/zotero-bookmark-editor/issues"
+    "url": "https://github.com/gmf3/zotero-bookmark-editor/issues"
   },
-  "homepage": "https://github.com/eFe-go/zotero-bookmark-editor#readme",
+  "homepage": "https://github.com/gmf3/zotero-bookmark-editor#readme",
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "start": "zotero-plugin serve",
